@@ -1,0 +1,734 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification for the RTO Standards 2025 Practice Guide
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: quality-areas
+    description: Quality areas of the RTO Standards 2025
+  - name: standards
+    description: Individual standards within each quality area
+  - name: strategies
+    description: Practical implementation strategies for each standard
+  - name: progress
+    description: Educator progress on each standard
+  - name: notes
+    description: Educator reflection notes per standard
+  - name: favorites
+    description: Educator favorited strategies
+  - name: dashboard
+    description: Aggregated overview data
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /quality-areas:
+    get:
+      operationId: listQualityAreas
+      tags: [quality-areas]
+      summary: List all quality areas
+      description: Returns the four quality areas of the RTO Standards 2025 with a summary of standards and progress.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/QualityAreaSummary"
+
+  /quality-areas/{qualityAreaId}:
+    get:
+      operationId: getQualityArea
+      tags: [quality-areas]
+      summary: Get a single quality area
+      description: Returns a quality area with all of its nested standards.
+      parameters:
+        - in: path
+          name: qualityAreaId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QualityAreaDetail"
+        "404":
+          description: Not found
+
+  /standards:
+    get:
+      operationId: listStandards
+      tags: [standards]
+      summary: List all standards (optionally filtered by quality area)
+      parameters:
+        - in: query
+          name: qualityAreaId
+          required: false
+          schema:
+            type: integer
+        - in: query
+          name: search
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StandardSummary"
+
+  /standards/{standardId}:
+    get:
+      operationId: getStandard
+      tags: [standards]
+      summary: Get a standard with its strategies
+      parameters:
+        - in: path
+          name: standardId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StandardDetail"
+        "404":
+          description: Not found
+
+  /strategies:
+    get:
+      operationId: listStrategies
+      tags: [strategies]
+      summary: List strategies (optionally filtered)
+      parameters:
+        - in: query
+          name: standardId
+          required: false
+          schema:
+            type: integer
+        - in: query
+          name: category
+          required: false
+          schema:
+            $ref: "#/components/schemas/StrategyCategory"
+        - in: query
+          name: effort
+          required: false
+          schema:
+            $ref: "#/components/schemas/StrategyEffort"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Strategy"
+
+  /strategies/featured:
+    get:
+      operationId: getFeaturedStrategy
+      tags: [strategies, dashboard]
+      summary: Get a featured "strategy of the day"
+      description: Returns a single rotating strategy to spotlight on the dashboard.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeaturedStrategy"
+
+  /progress:
+    get:
+      operationId: listProgress
+      tags: [progress]
+      summary: Get the educator's progress for every standard
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProgressEntry"
+  /progress/{standardId}:
+    put:
+      operationId: setProgress
+      tags: [progress]
+      summary: Set or update progress for a standard
+      parameters:
+        - in: path
+          name: standardId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetProgressBody"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProgressEntry"
+
+  /notes:
+    get:
+      operationId: listNotes
+      tags: [notes]
+      summary: List all reflection notes
+      parameters:
+        - in: query
+          name: standardId
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Note"
+    post:
+      operationId: createNote
+      tags: [notes]
+      summary: Create a new reflection note
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateNoteBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Note"
+
+  /notes/{noteId}:
+    put:
+      operationId: updateNote
+      tags: [notes]
+      summary: Update a reflection note
+      parameters:
+        - in: path
+          name: noteId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateNoteBody"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Note"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteNote
+      tags: [notes]
+      summary: Delete a reflection note
+      parameters:
+        - in: path
+          name: noteId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
+  /favorites:
+    get:
+      operationId: listFavorites
+      tags: [favorites]
+      summary: List favorited strategies
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Favorite"
+    post:
+      operationId: addFavorite
+      tags: [favorites]
+      summary: Add a strategy to favorites
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddFavoriteBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Favorite"
+  /favorites/{strategyId}:
+    delete:
+      operationId: removeFavorite
+      tags: [favorites]
+      summary: Remove a strategy from favorites
+      parameters:
+        - in: path
+          name: strategyId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get the dashboard summary
+      description: Returns aggregate stats across the whole guide — total standards, progress breakdown, per-quality-area progress, recent notes, and favorited count.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required: [status]
+
+    ProgressStatus:
+      type: string
+      enum: [not_started, planning, in_progress, embedded]
+
+    StrategyCategory:
+      type: string
+      enum:
+        - classroom
+        - assessment
+        - learner_support
+        - workforce
+        - governance
+        - compliance
+        - reflection
+
+    StrategyEffort:
+      type: string
+      enum: [quick_win, ongoing, deep_change]
+
+    QualityAreaSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        code:
+          type: string
+        title:
+          type: string
+        tagline:
+          type: string
+        description:
+          type: string
+        standardCount:
+          type: integer
+        embeddedCount:
+          type: integer
+        inProgressCount:
+          type: integer
+        planningCount:
+          type: integer
+        notStartedCount:
+          type: integer
+      required:
+        - id
+        - code
+        - title
+        - tagline
+        - description
+        - standardCount
+        - embeddedCount
+        - inProgressCount
+        - planningCount
+        - notStartedCount
+
+    QualityAreaDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        code:
+          type: string
+        title:
+          type: string
+        tagline:
+          type: string
+        description:
+          type: string
+        standards:
+          type: array
+          items:
+            $ref: "#/components/schemas/StandardSummary"
+      required: [id, code, title, tagline, description, standards]
+
+    StandardSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        qualityAreaId:
+          type: integer
+        qualityAreaCode:
+          type: string
+        qualityAreaTitle:
+          type: string
+        code:
+          type: string
+        title:
+          type: string
+        intent:
+          type: string
+        strategyCount:
+          type: integer
+        status:
+          $ref: "#/components/schemas/ProgressStatus"
+      required:
+        - id
+        - qualityAreaId
+        - qualityAreaCode
+        - qualityAreaTitle
+        - code
+        - title
+        - intent
+        - strategyCount
+        - status
+
+    StandardDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        qualityAreaId:
+          type: integer
+        qualityAreaCode:
+          type: string
+        qualityAreaTitle:
+          type: string
+        code:
+          type: string
+        title:
+          type: string
+        intent:
+          type: string
+        whatItMeans:
+          type: string
+        keyPractices:
+          type: array
+          items:
+            type: string
+        evidenceExamples:
+          type: array
+          items:
+            type: string
+        strategies:
+          type: array
+          items:
+            $ref: "#/components/schemas/Strategy"
+        progress:
+          $ref: "#/components/schemas/ProgressEntry"
+      required:
+        - id
+        - qualityAreaId
+        - qualityAreaCode
+        - qualityAreaTitle
+        - code
+        - title
+        - intent
+        - whatItMeans
+        - keyPractices
+        - evidenceExamples
+        - strategies
+
+    Strategy:
+      type: object
+      properties:
+        id:
+          type: integer
+        standardId:
+          type: integer
+        standardCode:
+          type: string
+        standardTitle:
+          type: string
+        qualityAreaId:
+          type: integer
+        qualityAreaCode:
+          type: string
+        title:
+          type: string
+        summary:
+          type: string
+        steps:
+          type: array
+          items:
+            type: string
+        category:
+          $ref: "#/components/schemas/StrategyCategory"
+        effort:
+          $ref: "#/components/schemas/StrategyEffort"
+        timeEstimate:
+          type: string
+        favorited:
+          type: boolean
+      required:
+        - id
+        - standardId
+        - standardCode
+        - standardTitle
+        - qualityAreaId
+        - qualityAreaCode
+        - title
+        - summary
+        - steps
+        - category
+        - effort
+        - timeEstimate
+        - favorited
+
+    FeaturedStrategy:
+      type: object
+      properties:
+        strategy:
+          $ref: "#/components/schemas/Strategy"
+        rationale:
+          type: string
+      required: [strategy, rationale]
+
+    ProgressEntry:
+      type: object
+      properties:
+        standardId:
+          type: integer
+        status:
+          $ref: "#/components/schemas/ProgressStatus"
+        updatedAt:
+          type: string
+          format: date-time
+      required: [standardId, status, updatedAt]
+
+    SetProgressBody:
+      type: object
+      properties:
+        status:
+          $ref: "#/components/schemas/ProgressStatus"
+      required: [status]
+
+    Note:
+      type: object
+      properties:
+        id:
+          type: integer
+        standardId:
+          type: integer
+        standardCode:
+          type: string
+        standardTitle:
+          type: string
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - standardId
+        - standardCode
+        - standardTitle
+        - body
+        - createdAt
+        - updatedAt
+
+    CreateNoteBody:
+      type: object
+      properties:
+        standardId:
+          type: integer
+        body:
+          type: string
+          minLength: 1
+          maxLength: 10000
+      required: [standardId, body]
+
+    UpdateNoteBody:
+      type: object
+      properties:
+        body:
+          type: string
+          minLength: 1
+          maxLength: 10000
+      required: [body]
+
+    Favorite:
+      type: object
+      properties:
+        strategyId:
+          type: integer
+        strategy:
+          $ref: "#/components/schemas/Strategy"
+        createdAt:
+          type: string
+          format: date-time
+      required: [strategyId, strategy, createdAt]
+
+    AddFavoriteBody:
+      type: object
+      properties:
+        strategyId:
+          type: integer
+      required: [strategyId]
+
+    QualityAreaProgress:
+      type: object
+      properties:
+        qualityAreaId:
+          type: integer
+        qualityAreaCode:
+          type: string
+        qualityAreaTitle:
+          type: string
+        standardCount:
+          type: integer
+        embeddedCount:
+          type: integer
+        inProgressCount:
+          type: integer
+        planningCount:
+          type: integer
+        notStartedCount:
+          type: integer
+        percentComplete:
+          type: number
+      required:
+        - qualityAreaId
+        - qualityAreaCode
+        - qualityAreaTitle
+        - standardCount
+        - embeddedCount
+        - inProgressCount
+        - planningCount
+        - notStartedCount
+        - percentComplete
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalStandards:
+          type: integer
+        totalStrategies:
+          type: integer
+        embeddedCount:
+          type: integer
+        inProgressCount:
+          type: integer
+        planningCount:
+          type: integer
+        notStartedCount:
+          type: integer
+        overallPercentComplete:
+          type: number
+        favoriteCount:
+          type: integer
+        noteCount:
+          type: integer
+        qualityAreaProgress:
+          type: array
+          items:
+            $ref: "#/components/schemas/QualityAreaProgress"
+        recentNotes:
+          type: array
+          items:
+            $ref: "#/components/schemas/Note"
+        recentlyUpdatedStandards:
+          type: array
+          items:
+            $ref: "#/components/schemas/StandardSummary"
+        featured:
+          $ref: "#/components/schemas/FeaturedStrategy"
+      required:
+        - totalStandards
+        - totalStrategies
+        - embeddedCount
+        - inProgressCount
+        - planningCount
+        - notStartedCount
+        - overallPercentComplete
+        - favoriteCount
+        - noteCount
+        - qualityAreaProgress
+        - recentNotes
+        - recentlyUpdatedStandards
+        - featured

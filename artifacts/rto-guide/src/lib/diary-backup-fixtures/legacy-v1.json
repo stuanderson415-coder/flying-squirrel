@@ -1,0 +1,18 @@
+{
+  "format": "rto-practice-diary",
+  "version": 1,
+  "exportedAt": "2025-11-18T14:30:00.000Z",
+  "entries": [
+    {
+      "id": "practice-legacy-v1",
+      "body": "I refreshed the assessment resources.",
+      "createdAt": "2025-11-17T14:30:00.000Z",
+      "standardCodes": ["1.2"],
+      "qas": ["qa2"],
+      "themes": ["design-delivery"],
+      "principles": ["reliable"],
+      "evidenceRules": ["current"],
+      "tagSchemaVersion": 2
+    }
+  ]
+}

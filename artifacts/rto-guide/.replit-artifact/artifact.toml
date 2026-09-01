@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "RTO Standards 2025 Practice Guide"
+version = "1.0.0"
+id = "artifacts/rto-guide"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22165
+
+[services.development]
+run = "pnpm --filter @workspace/rto-guide run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/rto-guide", "run", "build" ]
+publicDir = "artifacts/rto-guide/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22165"
+BASE_PATH = "/"
