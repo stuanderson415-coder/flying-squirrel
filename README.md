@@ -1,5 +1,5 @@
 # flying-squirrel
-# RTO Standards Companion
+# RTO Standards Companion V6.0
 
 A lightweight, installable **Progressive Web App (PWA)** designed to help Australian VET practitioners navigate and understand the **2025 Standards for Registered Training Organisations (RTOs)**.
 
